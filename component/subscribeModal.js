@@ -168,6 +168,21 @@ modalTemplate.innerHTML = `
                     <input id="email" name="email" type="email" required autocomplete="email" />
                     <p class="field-error">Please enter a valid email address.</p>
                 </div>
+                <div class="field">
+                    <label for="cardNumber">Card Number</label>
+                    <input id="cardNumber" name="cardNumber" type="text" inputmode="numeric" pattern="[0-9 ]{13,19}" required autocomplete="cc-number" placeholder="1234 5678 9012 3456" />
+                    <p class="field-error">Please enter a valid card number.</p>
+                </div>
+                <div class="field">
+                    <label for="expiryDate">Expiry Date</label>
+                    <input id="expiryDate" name="expiryDate" type="text" inputmode="numeric" pattern="(0[1-9]|1[0-2])\/\d{2}" required autocomplete="cc-exp" placeholder="MM/YY" />
+                    <p class="field-error">Please enter a valid expiry date (MM/YY).</p>
+                </div>
+                <div class="field">
+                    <label for="cvv">CVV</label>
+                    <input id="cvv" name="cvv" type="text" inputmode="numeric" pattern="\d{3,4}" required autocomplete="cc-csc" placeholder="123" />
+                    <p class="field-error">Please enter a valid CVV.</p>
+                </div>
                 <button type="submit" class="submit-btn">Subscribe</button>
             </form>
             <p class="success-message">You're all set! Check your inbox to confirm your subscription.</p>
