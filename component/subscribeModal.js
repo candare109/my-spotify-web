@@ -109,11 +109,28 @@ modalTemplate.innerHTML = `
         .field.invalid .field-error {
             display: block;
         }
-        .green_btn.submit-btn {
-            margin: 8px 0 0;
+        .submit-btn {
+            display: inline-block;
             width: 100%;
+            margin: 8px 0 0;
+            font-size: 16px;
+            line-height: 1;
+            border-radius: 50px;
+            padding: 19px 56px 21px;
+            color: var(--white, #fff);
+            background-color: var(--linkgreen, #1DB954);
+            transition-duration: .3s;
             border: none;
+            letter-spacing: 2px;
+            min-width: 160px;
+            text-transform: uppercase;
+            white-space: normal;
+            font-weight: 700;
+            font-family: inherit;
             cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: var(--hvrgreen, #1ed760);
         }
         .success-message {
             display: none;
@@ -151,7 +168,7 @@ modalTemplate.innerHTML = `
                     <input id="email" name="email" type="email" required autocomplete="email" />
                     <p class="field-error">Please enter a valid email address.</p>
                 </div>
-                <button type="submit" class="green_btn submit-btn">Subscribe</button>
+                <button type="submit" class="submit-btn">Subscribe</button>
             </form>
             <p class="success-message">You're all set! Check your inbox to confirm your subscription.</p>
         </div>

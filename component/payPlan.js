@@ -85,38 +85,35 @@ plantemplate.innerHTML = `
             font-size: 16px;
             color: rgb(34, 35, 38);
         }
-        .black_btn{
+        .subscribe-btn{
             display: inline-block;
             margin: 40px 0;
             font-size: 14px;
             line-height: 1;
             border-radius: 50px;
             padding: 17px 48px;
-            color: var(--white);
-            background-color: rgb(25, 20, 20);
-            border: 2px solid rgb(25, 20, 20) !important;
+            color: var(--white, #fff);
+            background-color: var(--linkgreen, #1DB954);
+            border: none;
             transition-duration: .3s;
-            border-width: 0;
             letter-spacing: 2px;
             text-transform: uppercase;
             white-space: normal;
-            border-radius: 50px;
             font-weight: 700;
+            font-family: inherit;
             cursor: pointer;
         }
-        .black_btn:hover{
+        .subscribe-btn:hover{
             transform: scale(1.04);
-            background-color: rgb(83, 79, 79);
+            background-color: var(--hvrgreen, #1ed760);
         }
-        a.black_btn,
-        button.black_btn{
+        .subscribe-btn{
             text-align: center;
             text-decoration: none;
             position: absolute;
             bottom: 60px;
             left: 15px;
             right: 15px;
-            font-family: inherit;
         }
         p{
             margin-top: auto;
@@ -172,7 +169,7 @@ plantemplate.innerHTML = `
                 <p class="f"></p>
             </li>
         </ul>   
-        <button type="button" class="black_btn">START USING</button>
+        <button type="button" class="subscribe-btn">START USING</button>
          <p><small><a href="">*Terms and conditions</a> apply.</small></p>
     </div>
 `;
@@ -192,7 +189,7 @@ class payPlan extends HTMLElement {
     }
 
     let attribute = ["prepay","name","price","account","list-1","list-2","list-3","list-4","btntext","smalltesxt"];
-    let element = ["span.prepay",".name",".price",".account","ul li p.o","ul li p.t","ul li p.th","ul li p.f",".black_btn","small"];
+    let element = ["span.prepay",".name",".price",".account","ul li p.o","ul li p.t","ul li p.th","ul li p.f",".subscribe-btn","small"];
 
     for(let i=0; i<attribute.length; i++){
         if(attribute[i] == "list-1" || attribute[i] == "list-2"|| attribute[i] == "list-3"|| attribute[i] == "list-4"){
@@ -212,7 +209,7 @@ class payPlan extends HTMLElement {
     //Ne yaptığımdan tam olarak emin değilim ama oldu.
 
     // Notify the page to open the subscription form with this plan's details.
-    const submitBtn = this.shadowRoot.querySelector('.black_btn');
+    const submitBtn = this.shadowRoot.querySelector('.subscribe-btn');
     if (submitBtn) {
         submitBtn.addEventListener('click', () => {
             this.dispatchEvent(new CustomEvent('subscribe', {
