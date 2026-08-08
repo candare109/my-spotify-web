@@ -1,4 +1,5 @@
 const modalTemplate = document.createElement('template');
+const SUBSCRIBE_ENDPOINT = '/api/subscriptions';
 modalTemplate.innerHTML = `
     <style>
         :host {
@@ -132,6 +133,24 @@ modalTemplate.innerHTML = `
         .submit-btn:hover {
             background-color: var(--hvrgreen, #1ed760);
         }
+        .submit-btn[disabled] {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+        .submit-btn[disabled]:hover {
+            background-color: var(--linkgreen, #1DB954);
+        }
+        .form-error {
+            display: none;
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #e91429;
+            text-align: center;
+        }
+        .form-error.visible {
+            display: block;
+        }
         .success-message {
             display: none;
             text-align: center;
@@ -183,6 +202,7 @@ modalTemplate.innerHTML = `
                     <input id="cvv" name="cvv" type="text" inputmode="numeric" pattern="\\d{3,4}" required autocomplete="cc-csc" placeholder="123" />
                     <p class="field-error">Please enter a valid CVV.</p>
                 </div>
+                <p class="form-error" role="alert" aria-live="polite"></p>
                 <button type="submit" class="submit-btn">Subscribe</button>
             </form>
             <p class="success-message">You're all set! Check your inbox to confirm your subscription.</p>
@@ -200,6 +220,9 @@ class SubscribeModal extends HTMLElement {
         this.form = this.shadowRoot.querySelector('form');
         this.planNameEl = this.shadowRoot.querySelector('.plan-name');
         this.planPriceEl = this.shadowRoot.querySelector('.plan-price');
+        this.formError = this.shadowRoot.querySelector('.form-error');
+        this.submitBtn = this.shadowRoot.querySelector('.submit-btn');
+        this._submitting = false;
 
         this.shadowRoot.querySelector('.close-btn').addEventListener('click', () => this.close());
         this.overlay.addEventListener('click', (e) => {
@@ -223,6 +246,9 @@ class SubscribeModal extends HTMLElement {
         this.removeAttribute('submitted');
         this.form.reset();
         this.form.querySelectorAll('.field').forEach((f) => f.classList.remove('invalid'));
+        this.form.querySelectorAll('input').forEach((i) => i.classList.remove('touched'));
+        this._showFormError('');
+        this._setSubmitting(false);
 
         this.planNameEl.textContent = plan;
         this.planPriceEl.textContent = price;
@@ -275,6 +301,9 @@ class SubscribeModal extends HTMLElement {
 
     _handleSubmit(e) {
         e.preventDefault();
+        if (this._submitting) return;
+
+        this._showFormError('');
 
         let valid = true;
         this.form.querySelectorAll('input').forEach((input) => {
@@ -284,15 +313,71 @@ class SubscribeModal extends HTMLElement {
         if (!valid) return;
 
         const data = Object.fromEntries(new FormData(this.form).entries());
-        // No backend wired up yet - surface the captured data for now.
-        this.dispatchEvent(new CustomEvent('subscribe-submit', {
-            bubbles: true,
-            composed: true,
-            detail: data,
-        }));
 
-        this.setAttribute('submitted', '');
-        setTimeout(() => this.close(), 1800);
+        // Card details deliberately never leave the browser: they belong to a
+        // PCI-compliant payment provider, which returns a token to store instead.
+        const payload = {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            plan: this.planNameEl.textContent.trim(),
+        };
+
+        this._submit(payload);
+    }
+
+    async _submit(payload) {
+        this._setSubmitting(true);
+        try {
+            const response = await fetch(SUBSCRIBE_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                this._showFormError(await this._readErrorMessage(response));
+                return;
+            }
+
+            const result = await response.json().catch(() => ({}));
+
+            this.dispatchEvent(new CustomEvent('subscribe-submit', {
+                bubbles: true,
+                composed: true,
+                detail: { ...payload, ...result },
+            }));
+
+            this.setAttribute('submitted', '');
+            setTimeout(() => this.close(), 1800);
+        } catch {
+            this._showFormError('We could not reach the subscription service. Check your connection and try again.');
+        } finally {
+            this._setSubmitting(false);
+        }
+    }
+
+    async _readErrorMessage(response) {
+        if (response.status === 404) {
+            return 'The subscription service is unavailable in this environment.';
+        }
+
+        const body = await response.json().catch(() => null);
+        if (body && Array.isArray(body.details) && body.details.length > 0) {
+            return body.details.map((detail) => detail.message).join(' ');
+        }
+        return (body && body.error) || 'Something went wrong. Please try again.';
+    }
+
+    _setSubmitting(isSubmitting) {
+        this._submitting = isSubmitting;
+        this.submitBtn.disabled = isSubmitting;
+        this.submitBtn.textContent = isSubmitting ? 'Subscribing…' : 'Subscribe';
+    }
+
+    _showFormError(message) {
+        this.formError.textContent = message;
+        this.formError.classList.toggle('visible', Boolean(message));
     }
 }
 

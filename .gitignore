@@ -1,0 +1,17 @@
+node_modules/
+
+# Azure Functions local configuration - contains connection strings and keys
+api/local.settings.json
+.env
+.env.*
+!.env.example
+
+# Azure Functions build/runtime output
+api/bin/
+api/obj/
+.azure/
+.python_packages/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
