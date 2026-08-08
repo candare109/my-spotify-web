@@ -175,12 +175,12 @@ modalTemplate.innerHTML = `
                 </div>
                 <div class="field">
                     <label for="expiryDate">Expiry Date</label>
-                    <input id="expiryDate" name="expiryDate" type="text" inputmode="numeric" pattern="(0[1-9]|1[0-2])\/\d{2}" required autocomplete="cc-exp" placeholder="MM/YY" />
+                    <input id="expiryDate" name="expiryDate" type="text" inputmode="numeric" pattern="(0[1-9]|1[0-2])\\/\\d{2}" required autocomplete="cc-exp" placeholder="MM/YY" />
                     <p class="field-error">Please enter a valid expiry date (MM/YY).</p>
                 </div>
                 <div class="field">
                     <label for="cvv">CVV</label>
-                    <input id="cvv" name="cvv" type="text" inputmode="numeric" pattern="\d{3,4}" required autocomplete="cc-csc" placeholder="123" />
+                    <input id="cvv" name="cvv" type="text" inputmode="numeric" pattern="\\d{3,4}" required autocomplete="cc-csc" placeholder="123" />
                     <p class="field-error">Please enter a valid CVV.</p>
                 </div>
                 <button type="submit" class="submit-btn">Subscribe</button>
@@ -213,6 +213,7 @@ class SubscribeModal extends HTMLElement {
 
         // Live validation feedback as the user types.
         this.form.querySelectorAll('input').forEach((input) => {
+            input.addEventListener('input', () => this._validateField(input));
             input.addEventListener('blur', () => this._validateField(input));
         });
     }
@@ -237,9 +238,39 @@ class SubscribeModal extends HTMLElement {
     }
 
     _validateField(input) {
+        if (input.name === 'expiryDate') {
+            input.setCustomValidity(this._getExpiryDateError(input.value));
+        } else if (input.name === 'cvv') {
+            input.setCustomValidity(this._getCvvError(input.value));
+        } else {
+            input.setCustomValidity('');
+        }
+
         const field = input.closest('.field');
         field.classList.toggle('invalid', !input.checkValidity());
         input.classList.add('touched');
+    }
+
+    _getExpiryDateError(value) {
+        const trimmed = value.trim();
+        if (!trimmed) return 'Please enter a valid expiry date (MM/YY).';
+
+        const match = trimmed.match(/^(0[1-9]|1[0-2])\/(\d{2})$/);
+        if (!match) return 'Please enter a valid expiry date (MM/YY).';
+
+        const month = Number(match[1]);
+        const year = 2000 + Number(match[2]);
+        const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+        if (endOfMonth < new Date()) return 'Your card has expired.';
+
+        return '';
+    }
+
+    _getCvvError(value) {
+        return /^\d{3,4}$/.test(value.trim())
+            ? ''
+            : 'Please enter a valid CVV.';
     }
 
     _handleSubmit(e) {
