@@ -108,13 +108,15 @@ plantemplate.innerHTML = `
             transform: scale(1.04);
             background-color: rgb(83, 79, 79);
         }
-        a.black_btn{
+        a.black_btn,
+        button.black_btn{
             text-align: center;
             text-decoration: none;
             position: absolute;
             bottom: 60px;
             left: 15px;
             right: 15px;
+            font-family: inherit;
         }
         p{
             margin-top: auto;
@@ -170,7 +172,7 @@ plantemplate.innerHTML = `
                 <p class="f"></p>
             </li>
         </ul>   
-        <a class="black_btn" href="">START USING</a>
+        <button type="button" class="black_btn">START USING</button>
          <p><small><a href="">*Terms and conditions</a> apply.</small></p>
     </div>
 `;
@@ -208,6 +210,21 @@ class payPlan extends HTMLElement {
         }
     }
     //Ne yaptığımdan tam olarak emin değilim ama oldu.
+
+    // Notify the page to open the subscription form with this plan's details.
+    const submitBtn = this.shadowRoot.querySelector('.black_btn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
+            this.dispatchEvent(new CustomEvent('subscribe', {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    plan: this.getAttribute('name'),
+                    price: this.getAttribute('price'),
+                },
+            }));
+        });
+    }
   }
 }
 

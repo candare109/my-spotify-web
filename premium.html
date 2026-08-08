@@ -114,11 +114,15 @@
 		<custom-footer></custom-footer>
 		<!--Footer-->
 
+		<!--Subscription form, opened when a plan's "START USING" button is clicked-->
+		<subscribe-modal></subscribe-modal>
+
 		<div id="opacity" class="opacity"></div>
 		<script src="./component/header.js"></script>
         <script src="./component/footer.js"></script>
         <script src="./component/whyCard.js"></script>
         <script src="./component/payPlan.js"></script>
+        <script src="./component/subscribeModal.js"></script>
         <script src="./js/main.js"></script>
         <script>
             //change header background color
@@ -132,6 +136,11 @@
                     document.querySelector("header").style.backgroundColor = "transparent";
                 }
             }
+
+            //Open the subscription form with the plan clicked by the user
+            document.addEventListener("subscribe", (e) => {
+                document.querySelector("subscribe-modal").open(e.detail);
+            });
         </script>
 	</body>
 </html>
