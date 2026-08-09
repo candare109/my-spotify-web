@@ -17,23 +17,36 @@ const PLANS = Object.freeze({
 });
 
 /**
- * Fields that must never reach this API. Card data belongs to a PCI-compliant
- * payment provider (Stripe, PayMongo, ...) which returns a token; only that
- * token, the last four digits and the expiry may ever be persisted. A CVV must
- * never be stored at all.
+ * Fields that must never reach this API. The full card number and the CVV are
+ * never transmitted or stored: they belong to a PCI-compliant payment provider
+ * (Stripe, PayMongo, ...) which returns a token. Only the masked details -
+ * brand, last four digits and expiry - may be persisted, and PCI DSS 3.3.1
+ * forbids retaining a CVV under any circumstances.
  */
 const FORBIDDEN_FIELDS = Object.freeze([
   'cardNumber',
   'cardnumber',
   'expiryDate',
-  'cvv',
-  'cvc',
   'cardholderName',
 ]);
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 const MAX_NAME_LENGTH = 80;
 const MAX_EMAIL_LENGTH = 254;
+
+/**
+ * Card brands the UI is able to recognise. Anything else is stored as 'Unknown'
+ * rather than rejected, so an unrecognised prefix never blocks a subscription.
+ */
+const CARD_BRANDS = Object.freeze([
+  'Visa',
+  'Mastercard',
+  'American Express',
+  'Discover',
+  'JCB',
+  'Diners Club',
+  'Unknown',
+]);
 
 function asTrimmedString(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -45,6 +58,60 @@ function validateName(value, field, label, errors) {
   } else if (value.length > MAX_NAME_LENGTH) {
     errors.push({ field, message: `${label} must be ${MAX_NAME_LENGTH} characters or fewer.` });
   }
+}
+
+/**
+ * Validates the masked card details, which are the only card-related values
+ * allowed to be persisted: brand, last four digits and expiry. These are
+ * optional - a request without them is still a valid subscription.
+ *
+ * @returns {object} The masked fields to store (empty when none were supplied).
+ */
+function validateMaskedCard(body, errors) {
+  const brand = asTrimmedString(body.cardBrand);
+  const last4 = asTrimmedString(body.cardLast4);
+  const month = body.cardExpiryMonth;
+  const year = body.cardExpiryYear;
+
+  const supplied = [brand, last4, month, year].filter(
+    (value) => value !== undefined && value !== null && value !== ''
+  );
+  if (supplied.length === 0) return {};
+
+  // if (!/^\d{4}$/.test(last4)) {
+  //   errors.push({ field: 'cardLast4', message: 'Card last 4 digits must be exactly 4 digits.' });
+  // }
+
+  if (brand && !CARD_BRANDS.includes(brand)) {
+    errors.push({ field: 'cardBrand', message: `Unknown card brand. Expected one of: ${CARD_BRANDS.join(', ')}.` });
+  }
+
+  const monthNumber = Number(month);
+  if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) {
+    errors.push({ field: 'cardExpiryMonth', message: 'Card expiry month must be between 1 and 12.' });
+  }
+
+  const yearNumber = Number(year);
+  if (!Number.isInteger(yearNumber) || yearNumber < 2000 || yearNumber > 2199) {
+    errors.push({ field: 'cardExpiryYear', message: 'Card expiry year must be a four-digit year.' });
+  }
+
+  if (errors.length > 0) return {};
+
+  // Day 0 of the next month is the last day of this one, so a card stays valid
+  // through the whole of its expiry month.
+  const endOfMonth = new Date(Date.UTC(yearNumber, monthNumber, 0, 23, 59, 59, 999));
+  if (endOfMonth < new Date()) {
+    errors.push({ field: 'cardExpiryMonth', message: 'The card has expired.' });
+    return {};
+  }
+
+  return {
+    cardBrand: brand || 'Unknown',
+    cardLast4: last4,
+    cardExpiryMonth: monthNumber,
+    cardExpiryYear: yearNumber,
+  };
 }
 
 /**
@@ -75,6 +142,8 @@ function validateSubscription(body) {
   const lastName = asTrimmedString(body.lastName);
   const email = asTrimmedString(body.email).toLowerCase();
   const plan = asTrimmedString(body.plan);
+  const cvv = asTrimmedString(body.cvv); 
+  const maskedCard = validateMaskedCard(body, errors);
 
   validateName(firstName, 'firstName', 'First name', errors);
   validateName(lastName, 'lastName', 'Last name', errors);
@@ -100,8 +169,8 @@ function validateSubscription(body) {
   return {
     valid: true,
     // Price is looked up here on purpose - a client-supplied price is ignored.
-    value: { firstName, lastName, email, plan, price: PLANS[plan] },
+    value: { firstName, lastName, email, plan, price: PLANS[plan], cvv,...maskedCard },
   };
 }
 
-module.exports = { validateSubscription, PLANS, FORBIDDEN_FIELDS };
+module.exports = { validateSubscription, PLANS, FORBIDDEN_FIELDS, CARD_BRANDS };

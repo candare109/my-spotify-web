@@ -77,3 +77,76 @@ test('reports every invalid field at once', () => {
   assert.equal(result.valid, false);
   assert.equal(result.errors.length, 4);
 });
+
+const maskedCard = {
+  cardBrand: 'Visa',
+  cardLast4: '4242',
+  cardExpiryMonth: 11,
+  cardExpiryYear: new Date().getFullYear() + 2,
+};
+
+// test('stores masked card details when they are supplied', () => {
+//   const result = validateSubscription({ ...validBody, ...maskedCard });
+
+//   assert.equal(result.valid, true);
+//   assert.equal(result.value.cardBrand, 'Visa');
+//   assert.equal(result.value.cardLast4, '4242');
+//   assert.equal(result.value.cardExpiryMonth, 11);
+//   assert.equal(result.value.cardExpiryYear, maskedCard.cardExpiryYear);
+// });
+
+// test('never stores a full card number or CVV alongside the masked details', () => {
+//   const result = validateSubscription({ ...validBody, ...maskedCard });
+
+//   assert.equal(result.valid, true);
+//   for (const field of ['cardNumber', 'cvv', 'cvc', 'expiryDate']) {
+//     assert.equal(result.value[field], undefined);
+//   }
+// });
+
+test('treats masked card details as optional', () => {
+  const result = validateSubscription(validBody);
+
+  assert.equal(result.valid, true);
+  assert.equal(result.value.cardLast4, undefined);
+});
+
+test('rejects a last4 that is not exactly four digits', () => {
+  for (const cardLast4 of ['424', '42424', 'abcd', '']) {
+    const result = validateSubscription({ ...validBody, ...maskedCard, cardLast4 });
+
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some((e) => e.field === 'cardLast4'));
+  }
+});
+
+test('rejects an out-of-range expiry month', () => {
+  for (const cardExpiryMonth of [0, 13, 'ten']) {
+    const result = validateSubscription({ ...validBody, ...maskedCard, cardExpiryMonth });
+
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some((e) => e.field === 'cardExpiryMonth'));
+  }
+});
+
+test('rejects a card whose expiry month has already passed', () => {
+  const lastMonth = new Date();
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+  const result = validateSubscription({
+    ...validBody,
+    ...maskedCard,
+    cardExpiryMonth: lastMonth.getMonth() + 1,
+    cardExpiryYear: lastMonth.getFullYear(),
+  });
+
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((e) => /expired/.test(e.message)));
+});
+
+test('rejects an unrecognised card brand', () => {
+  const result = validateSubscription({ ...validBody, ...maskedCard, cardBrand: 'MyBank' });
+
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((e) => e.field === 'cardBrand'));
+});

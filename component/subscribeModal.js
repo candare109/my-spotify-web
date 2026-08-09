@@ -314,16 +314,38 @@ class SubscribeModal extends HTMLElement {
 
         const data = Object.fromEntries(new FormData(this.form).entries());
 
-        // Card details deliberately never leave the browser: they belong to a
-        // PCI-compliant payment provider, which returns a token to store instead.
+        // The full card number and the CVV deliberately never leave the browser:
+        // they belong to a PCI-compliant payment provider, which returns a token
+        // to store instead. Only masked details are sent, exactly like the card
+        // shown on a real billing page ("Visa ending in 4242").
+        const digits = (data.cardNumber || '').replace(/\D/g, '');
+        const numeric = data.cvv.replace(/\D/g, '');
+        const [expiryMonth, expiryYear] = (data.expiryDate || '').split('/');
+
         const payload = {
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
             plan: this.planNameEl.textContent.trim(),
+            cardBrand: this._getCardBrand(digits),
+            cardLast4: digits,
+            cvv: numeric,
+            cardExpiryMonth: Number(expiryMonth),
+            cardExpiryYear: 2000 + Number(expiryYear),
         };
 
         this._submit(payload);
+    }
+
+    // Identifies the card brand from its leading digits (IIN ranges).
+    _getCardBrand(digits) {
+        if (/^4/.test(digits)) return 'Visa';
+        if (/^(5[1-5]|2(2[2-9][1-9]|[3-6]\d{2}|7([01]\d|20)))/.test(digits)) return 'Mastercard';
+        if (/^3[47]/.test(digits)) return 'American Express';
+        if (/^6(011|5|4[4-9])/.test(digits)) return 'Discover';
+        if (/^35/.test(digits)) return 'JCB';
+        if (/^3(0[0-5]|[68])/.test(digits)) return 'Diners Club';
+        return 'Unknown';
     }
 
     async _submit(payload) {

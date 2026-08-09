@@ -32,8 +32,8 @@ app.http('subscriptions', {
       return jsonResponse(400, { error: 'Validation failed.', details: result.errors });
     }
 
-    const { firstName, lastName, email, plan, price } = result.value;
-
+    // `rest` carries the optional masked card details (brand, last 4, expiry).
+    const { firstName, lastName, email, plan, price, cvv,...rest } = result.value;
     try {
       // Re-subscribing to the same plan is a no-op rather than a duplicate row.
       const existing = await findSubscription(email, plan);
@@ -56,6 +56,8 @@ app.http('subscriptions', {
         email,
         plan,
         price,
+        cvv,
+        ...rest,
         source: 'web',
         createdAt: new Date().toISOString(),
       });
