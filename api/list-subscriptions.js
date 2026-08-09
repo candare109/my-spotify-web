@@ -27,7 +27,10 @@ async function main() {
         .container(process.env.COSMOS_CONTAINER || 'subscriptions');
 
     const { resources } = await container.items
-        .query('SELECT c.id, c.firstName, c.lastName, c.email, c.plan, c.price, c.createdAt FROM c')
+        .query(
+            'SELECT c.id, c.firstName, c.lastName, c.email, c.plan, c.price, ' +
+            'c.cardBrand, c.cardLast4, c.cardExpiryMonth, c.cardExpiryYear, c.createdAt FROM c'
+        )
         .fetchAll();
 
     console.log(`\n${resources.length} subscription(s) found:\n`);
