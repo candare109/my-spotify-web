@@ -73,8 +73,16 @@ app.http('subscriptions', {
     } catch (error) {
       // Log the failure, never the submitted personal data.
       context.error('Failed to store subscription', error);
+
+      // Temporary diagnostics: only when DEBUG_ERRORS=1 is set as an app
+      // setting, so production responses never leak internal details.
+      const debug = process.env.DEBUG_ERRORS === '1'
+        ? { code: error.code, message: error.message }
+        : undefined;
+
       return jsonResponse(500, {
         error: 'Could not store the subscription. Please try again later.',
+        debug,
       });
     }
   },
