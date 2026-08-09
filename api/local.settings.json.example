@@ -1,0 +1,14 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "",
+    "COSMOS_ENDPOINT": "https://<your-cosmos-account>.documents.azure.com:443/",
+    "COSMOS_KEY": "<primary key from: az cosmosdb keys list>",
+    "COSMOS_DATABASE": "spotify-web",
+    "COSMOS_CONTAINER": "subscriptions"
+  },
+  "Host": {
+    "CORS": "*"
+  }
+}

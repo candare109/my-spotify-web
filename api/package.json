@@ -1,0 +1,18 @@
+{
+  "name": "my-spotify-web-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azure Functions API backing the subscription form of my-spotify-web",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "func start",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.1.1",
+    "@azure/functions": "^4.5.1"
+  }
+}

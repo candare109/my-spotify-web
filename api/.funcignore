@@ -1,0 +1,6 @@
+local.settings.json
+local.settings.json.example
+*.test.js
+list-subscriptions.js
+*.md
+.vscode/

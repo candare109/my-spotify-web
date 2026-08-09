@@ -1,0 +1,56 @@
+{
+  "platform": {
+    "apiRuntime": "node:20"
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",
+      "/assets/*",
+      "/css/*",
+      "/js/*",
+      "/component/*",
+      "/Spotify-songs/*",
+      "/*.{png,jpg,jpeg,jfif,webp,gif,svg,ico,otf,woff,woff2,mp3,css,js}"
+    ]
+  },
+  "mimeTypes": {
+    ".jfif": "image/jpeg",
+    ".webp": "image/webp",
+    ".otf": "font/otf",
+    ".mp3": "audio/mpeg",
+    ".json": "application/json"
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "routes": [
+    {
+      "route": "/api/subscriptions",
+      "methods": ["POST"],
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/assets/*",
+      "headers": { "Cache-Control": "public, max-age=604800, immutable" }
+    },
+    {
+      "route": "/Spotify-songs/covers/*",
+      "headers": { "Cache-Control": "public, max-age=604800, immutable" }
+    },
+    {
+      "route": "/*.html",
+      "headers": { "Cache-Control": "no-cache" }
+    },
+    { "route": "/README.md", "statusCode": 404 },
+    { "route": "/Dockerfile", "statusCode": 404 },
+    { "route": "/nginx.conf", "statusCode": 404 },
+    { "route": "/k8s-manifests.yaml", "statusCode": 404 },
+    { "route": "/Material-Ocean/*", "statusCode": 404 }
+  ],
+  "responseOverrides": {
+    "404": { "rewrite": "/index.html", "statusCode": 404 }
+  }
+}
